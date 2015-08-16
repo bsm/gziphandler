@@ -28,9 +28,9 @@ func (gzw gzipResponseWriter) Write(b []byte) (int, error) {
 	return gzw.Writer.Write(b)
 }
 
-// NewLevel behaves like GzipHandler but allows a custom GZIP
+// WrapLevel behaves like GzipHandler but allows a custom GZIP
 // compression level. Invalid compression level inputs are reset to default.
-func NewLevel(h http.Handler, level int) http.Handler {
+func WrapLevel(h http.Handler, level int) http.Handler {
 	if level < gzip.DefaultCompression || level > gzip.BestCompression {
 		level = gzip.DefaultCompression
 	}
@@ -59,8 +59,8 @@ func NewLevel(h http.Handler, level int) http.Handler {
 	})
 }
 
-// New wraps an HTTP handler, to transparently gzip the response body if
+// Wrap wraps an HTTP handler, to transparently gzip the response body if
 // the client supports it (via the Accept-Encoding header).
-func New(h http.Handler) http.Handler {
-	return NewLevel(h, gzip.DefaultCompression)
+func Wrap(h http.Handler) http.Handler {
+	return WrapLevel(h, gzip.DefaultCompression)
 }

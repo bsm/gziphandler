@@ -9,11 +9,9 @@ when that's undesirable.
 This is a fork of the [original][nytimes] version, heavily optimised for
 performance and low latency.
 
-[nytimes]: https://github.com/NYTimes/gziphandler
-
 ## Usage
 
-Call `GzipHandler` with any handler (an object which implements the
+Call `Wrap` with any handler (an object which implements the
 `http.Handler` interface), and it'll return a new handler which gzips the
 response. For example:
 
@@ -32,7 +30,7 @@ func main() {
 		io.WriteString(w, "Hello, World")
 	})
 
-	withGz := gziphandler.GzipHandler(withoutGz)
+	withGz := gziphandler.Wrap(withoutGz)
 
 	http.Handle("/", withGz)
 	http.ListenAndServe("0.0.0.0:8000", nil)
@@ -42,15 +40,14 @@ func main() {
 
 ## Documentation
 
-The docs can be found at [godoc.org] [docs], as usual.
+The docs can be found at [godoc.org][docs], as usual.
 
 
 ## License
 
-[Apache 2.0] [license].
+[Apache 2.0][license].
 
 
-
-
+[nytimes]:  https://github.com/NYTimes/gziphandler
 [docs]:     https://godoc.org/github.com/bsm/gziphandler
 [license]:  https://github.com/bsm/gziphandler/blob/master/LICENSE.md

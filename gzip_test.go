@@ -89,7 +89,7 @@ func runBenchmark(b *testing.B, req *http.Request, handler http.Handler) {
 }
 
 func newTestHandler(body string) http.Handler {
-	return New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return Wrap(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		io.WriteString(w, body)
 	}))
