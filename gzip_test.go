@@ -11,28 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseEncodings(t *testing.T) {
-
-	examples := map[string]codings{
-
-		// Examples from RFC 2616
-		"compress, gzip": codings{"compress": 1.0, "gzip": 1.0},
-		"":               codings{},
-		"*":              codings{"*": 1.0},
-		"compress;q=0.5, gzip;q=1.0":         codings{"compress": 0.5, "gzip": 1.0},
-		"gzip;q=1.0, identity; q=0.5, *;q=0": codings{"gzip": 1.0, "identity": 0.5, "*": 0.0},
-
-		// More random stuff
-		"AAA;q=1":     codings{"aaa": 1.0},
-		"BBB ; q = 2": codings{"bbb": 1.0},
-	}
-
-	for eg, exp := range examples {
-		act, _ := parseEncodings(eg)
-		assert.Equal(t, exp, act)
-	}
-}
-
 func TestGzipHandler(t *testing.T) {
 	testBody := "aaabbbccc"
 
