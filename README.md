@@ -6,6 +6,10 @@ response body, for clients which support it. Although it's usually simpler to
 leave that to a reverse proxy (like nginx or Varnish), this package is useful
 when that's undesirable.
 
+This is a fork of the [original][nytimes] version, heavily optimised for
+performance and low latency.
+
+[nytimes]: https://github.com/NYTimes/gziphandler
 
 ## Usage
 
@@ -19,7 +23,7 @@ package main
 import (
 	"io"
 	"net/http"
-	"github.com/nytimes/gziphandler"
+	"github.com/bsm/gziphandler"
 )
 
 func main() {
@@ -48,5 +52,5 @@ The docs can be found at [godoc.org] [docs], as usual.
 
 
 
-[docs]:     https://godoc.org/github.com/nytimes/gziphandler
-[license]:  https://github.com/nytimes/gziphandler/blob/master/LICENSE.md
+[docs]:     https://godoc.org/github.com/bsm/gziphandler
+[license]:  https://github.com/bsm/gziphandler/blob/master/LICENSE.md
