@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,7 +47,7 @@ func TestGzipHandler(t *testing.T) {
 func BenchmarkGzipHandler_Serial(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/whatever", nil)
 	req.Header.Set("Accept-Encoding", "gzip")
-	handler := newTestHandler("aaabbbccc")
+	handler := newTestHandler(strings.Repeat("aaabbbccc", 500))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -57,7 +58,7 @@ func BenchmarkGzipHandler_Serial(b *testing.B) {
 func BenchmarkGzipHandler_Parallel(b *testing.B) {
 	req, _ := http.NewRequest("GET", "/whatever", nil)
 	req.Header.Set("Accept-Encoding", "gzip")
-	handler := newTestHandler("aaabbbccc")
+	handler := newTestHandler(strings.Repeat("aaabbbccc", 500))
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -82,13 +83,13 @@ func runBenchmark(b *testing.B, req *http.Request, handler http.Handler) {
 	handler.ServeHTTP(res, req)
 	if code := res.Code; code != 200 {
 		b.Fatalf("Expected 200 but got %d", code)
-	} else if blen := res.Body.Len(); blen != 33 {
+	} else if blen := res.Body.Len(); blen < 50 || blen > 75 {
 		b.Fatalf("Expected complete response body, but got %d bytes", blen)
 	}
 }
 
 func newTestHandler(body string) http.Handler {
-	return GzipHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return New(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		io.WriteString(w, body)
 	}))

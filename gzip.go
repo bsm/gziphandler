@@ -15,10 +15,6 @@ const (
 	scheme          = "gzip"
 )
 
-var gzipWriterPool = sync.Pool{
-	New: func() interface{} { return gzip.NewWriter(nil) },
-}
-
 // gzipResponseWriter provides an http.ResponseWriter interface, which gzips
 // bytes before writing them to the underlying response. This doesn't set the
 // Content-Encoding header, nor close the writers, so don't forget to do that.
@@ -32,9 +28,17 @@ func (gzw gzipResponseWriter) Write(b []byte) (int, error) {
 	return gzw.Writer.Write(b)
 }
 
-// GzipHandler wraps an HTTP handler, to transparently gzip the response body if
-// the client supports it (via the Accept-Encoding header).
-func GzipHandler(h http.Handler) http.Handler {
+// NewLevel behaves like GzipHandler but allows a custom GZIP
+// compression level. Invalid compression level inputs are reset to default.
+func NewLevel(h http.Handler, level int) http.Handler {
+	if level < gzip.DefaultCompression || level > gzip.BestCompression {
+		level = gzip.DefaultCompression
+	}
+
+	pool := sync.Pool{
+		New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, level); return w },
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add(vary, acceptEncoding)
 
@@ -45,12 +49,18 @@ func GzipHandler(h http.Handler) http.Handler {
 
 		// Bytes written during ServeHTTP are redirected to this gzip writer
 		// before being written to the underlying response.
-		gzw := gzipWriterPool.Get().(*gzip.Writer)
+		gzw := pool.Get().(*gzip.Writer)
 		gzw.Reset(w)
 		defer gzw.Close()
 
 		w.Header().Set(contentEncoding, scheme)
 		h.ServeHTTP(gzipResponseWriter{gzw, w}, r)
-		gzipWriterPool.Put(gzw)
+		pool.Put(gzw)
 	})
+}
+
+// New wraps an HTTP handler, to transparently gzip the response body if
+// the client supports it (via the Accept-Encoding header).
+func New(h http.Handler) http.Handler {
+	return NewLevel(h, gzip.DefaultCompression)
 }
