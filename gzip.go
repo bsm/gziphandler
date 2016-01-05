@@ -15,6 +15,16 @@ const (
 	scheme          = "gzip"
 )
 
+func newWriterLevel(pool *sync.Pool, w io.Writer, level int) *gzip.Writer {
+	if v := pool.Get(); v != nil {
+		zw := v.(*gzip.Writer)
+		zw.Reset(w)
+		return zw
+	}
+	zw, _ := gzip.NewWriterLevel(w, level)
+	return zw
+}
+
 // gzipResponseWriter provides an http.ResponseWriter interface, which gzips
 // bytes before writing them to the underlying response. This doesn't set the
 // Content-Encoding header, nor close the writers, so don't forget to do that.
@@ -24,8 +34,8 @@ type gzipResponseWriter struct {
 }
 
 // Write appends data to the gzip writer.
-func (gzw gzipResponseWriter) Write(b []byte) (int, error) {
-	return gzw.Writer.Write(b)
+func (zw gzipResponseWriter) Write(b []byte) (int, error) {
+	return zw.Writer.Write(b)
 }
 
 // WrapLevel behaves like GzipHandler but allows a custom GZIP
@@ -34,10 +44,7 @@ func WrapLevel(h http.Handler, level int) http.Handler {
 	if level < gzip.DefaultCompression || level > gzip.BestCompression {
 		level = gzip.DefaultCompression
 	}
-
-	pool := sync.Pool{
-		New: func() interface{} { w, _ := gzip.NewWriterLevel(nil, level); return w },
-	}
+	pool := new(sync.Pool)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add(vary, acceptEncoding)
@@ -49,13 +56,12 @@ func WrapLevel(h http.Handler, level int) http.Handler {
 
 		// Bytes written during ServeHTTP are redirected to this gzip writer
 		// before being written to the underlying response.
-		gzw := pool.Get().(*gzip.Writer)
-		gzw.Reset(w)
-		defer gzw.Close()
-
+		zw := newWriterLevel(pool, w, level)
 		w.Header().Set(contentEncoding, scheme)
-		h.ServeHTTP(gzipResponseWriter{gzw, w}, r)
-		pool.Put(gzw)
+		h.ServeHTTP(gzipResponseWriter{zw, w}, r)
+
+		zw.Close()
+		pool.Put(zw)
 	})
 }
 
